@@ -21,7 +21,7 @@ public class HeadsController : ControllerBase
     public async Task<IActionResult> GetStatus(string deviceName)
     {
         HttpClient client = new HttpClient();
-        var response = await client.GetAsync($"https://localhost:7023/Gateway/GetStatus?deviceName={deviceName}");
+        var response = await client.GetAsync($"https://192.168.150.3:44304/Gateway/GetStatus?deviceName={deviceName}");
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var content = await response.Content.ReadAsStringAsync();
