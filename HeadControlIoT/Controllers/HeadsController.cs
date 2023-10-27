@@ -1,5 +1,7 @@
 ﻿using System.Net;
+using System.Security.Cryptography;
 using System.Text.Json;
+using ExecutingDevice;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HeadController.Controllers;
@@ -20,7 +22,12 @@ public class HeadsController : ControllerBase
     [HttpGet(Name = "GetDeviceStatus")]
     public async Task<IActionResult> GetStatus(string deviceName)
     {
-        HttpClient client = new HttpClient();
+        HttpClientHandler clientHandler = new HttpClientHandler();
+        clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+        
+        
+        HttpClient client = new HttpClient(clientHandler);
+        
         var response = await client.GetAsync($"https://192.168.150.3:44304/Gateway/GetStatus?deviceName={deviceName}");
         if (response.StatusCode == HttpStatusCode.OK)
         {
@@ -47,29 +54,22 @@ public class HeadsController : ControllerBase
             body = await reader.ReadToEndAsync();
         }
         var deviceData = JsonSerializer.Deserialize<DeviceData>(body);
-        _logger.LogInformation($"{DateTime.UtcNow} | {deviceData.name}: {deviceData.data}");
 
-        return new JsonResult(new {});
+        string dataStr = "";
+        using (Aes myAes = Aes.Create())
+        {
+            AesFunction aesFunction = new AesFunction(myAes.Key, myAes.IV);
+            dataStr = aesFunction.DecryptStringFromBytes(deviceData.data);
+        }
+        _logger.LogInformation($"{DateTime.UtcNow} | {deviceData.name}: {dataStr}");
+
+        return new JsonResult(Ok());
     }
-    
-    /*[HttpPost(Name = "PostChangeStatus")]
-    public async Task<IActionResult> PostChangeStatus(string deviceName, int status)
-    {
-        var newStatus = status switch {
-            0 => Status.STOP,
-            1 => Status.RUN
-        };
-        
-        
-        _logger.LogInformation($"{DateTime.UtcNow} | POST status: {deviceName} --> {newStatus}");
-        
-        return new JsonResult(HttpStatusCode.OK);
-    }*/
     
     private class DeviceData
     {
         public string name { get; set; }
-        public string data { get; set; }
+        public byte[] data { get; set; }
     }
     
     private class DeviceStatus
