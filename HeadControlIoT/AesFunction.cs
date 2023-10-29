@@ -79,22 +79,11 @@ public class AesFunction
                     {
                         plaintextBytes = new byte[cipherText.Length];
                         plaintextBytesCount = csDecrypt.Read(plaintextBytes, 0, plaintextBytes.Length);
-                        //csDecrypt.Write(cipherText, 0, cipherText.Length);
-                        /*using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-                        {
-                            plaintext = srDecrypt.ReadToEnd();
-                        }*/
                     }
-                    //plaintextBytes = msDecrypt.ToArray();
-
                 }
             };
             
-            
         }
-
-        //plaintext = Encoding.Default.GetString(plaintextBytes);
-        //plaintext = Convert.ToString(plaintextBytes);
 
         plaintext = Encoding.UTF8.GetString(plaintextBytes, 0, plaintextBytesCount);
         return plaintext;

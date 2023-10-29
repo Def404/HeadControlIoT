@@ -25,7 +25,6 @@ public class HeadsController : ControllerBase
         HttpClientHandler clientHandler = new HttpClientHandler();
         clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
         
-        
         HttpClient client = new HttpClient(clientHandler);
         
         var response = await client.GetAsync($"https://192.168.150.3:44304/Gateway/GetStatus?deviceName={deviceName}");
@@ -43,6 +42,35 @@ public class HeadsController : ControllerBase
             return new JsonResult(response.StatusCode);
         }
         
+    }
+
+    [HttpGet(Name = "GetAllDeviceStatus")]
+    public async Task<IActionResult> GetAllDeviceStatus()
+    {
+        HttpClientHandler clientHandler = new HttpClientHandler();
+        clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+        
+        HttpClient client = new HttpClient(clientHandler);
+        var response = await client.GetAsync($"https://192.168.150.3:44304/Gateway/GetAllDeviceStatus");
+        
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            var devices = JsonSerializer.Deserialize<List<DeviceStatus>>(content);
+
+            var logStr = $"{DateTime.UtcNow} | \n";
+            foreach (var device in devices)
+            {
+                logStr += $"{device.deviceName} status: {device.status} \n";
+            }
+            _logger.LogInformation(logStr);
+            return new JsonResult(new{devices});
+        }
+        else
+        {
+            _logger.LogInformation($"{DateTime.UtcNow} | It was not possible to get the all status");
+            return new JsonResult(response.StatusCode);
+        }
     }
 
     [HttpPost(Name ="PostDeviceData")]
@@ -63,7 +91,19 @@ public class HeadsController : ControllerBase
         }
         _logger.LogInformation($"{DateTime.UtcNow} | {deviceData.name}: {dataStr}");
 
-        return new JsonResult(Ok());
+        return Ok();
+    }
+    
+    [HttpPost(Name = "PostChangeStatus")]
+    public async Task<IActionResult> PostChangeStatus(string deviceName, int value)
+    {
+        HttpClientHandler clientHandler = new HttpClientHandler();
+        clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+        
+        HttpClient client = new HttpClient(clientHandler);
+        var response = await client.PostAsync($"https://192.168.150.3:44304/Gateway/PostChangeStatus?deviceName={deviceName}&value={value}", null);
+        _logger.LogInformation($"{DateTime.UtcNow} | {response.StatusCode} | Device: {deviceName}, Status value: {value}");
+        return new JsonResult(response);
     }
     
     private class DeviceData
