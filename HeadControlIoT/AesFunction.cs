@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using System.Text;
 
 namespace ExecutingDevice;
 
@@ -58,29 +59,44 @@ public class AesFunction
             throw new ArgumentNullException("_key");
         if (_IV == null || _IV.Length <= 0)
             throw new ArgumentNullException("_IV");
-        
-        string plaintext = null;
 
+        byte[] plaintextBytes = null;
+        int plaintextBytesCount = 0;
+        string plaintext = null;
        
         using (Aes aesAlg = Aes.Create())
         {
-            aesAlg.Key = _key;
-            aesAlg.IV = _IV;
-            
-            ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-            
-            using (MemoryStream msDecrypt = new MemoryStream(cipherText))
+            aesAlg.KeySize = 128;
+            aesAlg.Key = new byte[128 / 8];
+            aesAlg.IV = new byte[128 / 8];
+            aesAlg.Padding = PaddingMode.Zeros;  
+
+            using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
             {
-                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (MemoryStream msDecrypt = new MemoryStream(cipherText))
                 {
-                    using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
                     {
-                        plaintext = srDecrypt.ReadToEnd();
+                        plaintextBytes = new byte[cipherText.Length];
+                        plaintextBytesCount = csDecrypt.Read(plaintextBytes, 0, plaintextBytes.Length);
+                        //csDecrypt.Write(cipherText, 0, cipherText.Length);
+                        /*using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            plaintext = srDecrypt.ReadToEnd();
+                        }*/
                     }
+                    //plaintextBytes = msDecrypt.ToArray();
+
                 }
-            }
+            };
+            
+            
         }
 
+        //plaintext = Encoding.Default.GetString(plaintextBytes);
+        //plaintext = Convert.ToString(plaintextBytes);
+
+        plaintext = Encoding.UTF8.GetString(plaintextBytes, 0, plaintextBytesCount);
         return plaintext;
     }
 }
