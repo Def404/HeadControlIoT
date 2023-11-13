@@ -56,20 +56,21 @@ public class HeadsController : ControllerBase
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var devices = JsonSerializer.Deserialize<AllStatus>(content);
+            
+            var devices = JsonSerializer.Deserialize<AllDevices>(content);
 
             var logStr = $"{DateTime.UtcNow} | \n";
-            foreach (var device in devices.DevicesStatus)
+            foreach (var device in devices.resultAllDevices)
             {
                 logStr += $"{device.deviceName} status: {device.status} \n";
             }
             _logger.LogInformation(logStr);
-            return new JsonResult(new{devices.DevicesStatus});
+            return new JsonResult(new{devices.resultAllDevices});
         }
         else
         {
             _logger.LogInformation($"{DateTime.UtcNow} | It was not possible to get the all status");
-            return new JsonResult(response.StatusCode);
+            return new JsonResult(/*response.StatusCode*/ "");
         }
     }
 
@@ -106,10 +107,11 @@ public class HeadsController : ControllerBase
         return new JsonResult(response);
     }
 
-    private class AllStatus
+    private class AllDevices
     {
-        public List<DeviceStatus> DevicesStatus { get; set; }
+        public List<DeviceStatus> resultAllDevices { get; set; }
     }
+    
     private class DeviceData
     {
         public string name { get; set; }
