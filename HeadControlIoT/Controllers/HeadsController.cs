@@ -56,15 +56,15 @@ public class HeadsController : ControllerBase
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var content = await response.Content.ReadAsStringAsync();
-            List<DeviceStatus> devices = JsonSerializer.Deserialize<List<DeviceStatus>>(content);
+            var devices = JsonSerializer.Deserialize<AllStatus>(content);
 
             var logStr = $"{DateTime.UtcNow} | \n";
-            foreach (var device in devices)
+            foreach (var device in devices.DevicesStatus)
             {
                 logStr += $"{device.deviceName} status: {device.status} \n";
             }
             _logger.LogInformation(logStr);
-            return new JsonResult(new{devices});
+            return new JsonResult(new{devices.DevicesStatus});
         }
         else
         {
@@ -105,7 +105,11 @@ public class HeadsController : ControllerBase
         _logger.LogInformation($"{DateTime.UtcNow} | {response.StatusCode} | Device: {deviceName}, Status value: {value}");
         return new JsonResult(response);
     }
-    
+
+    private class AllStatus
+    {
+        public List<DeviceStatus> DevicesStatus { get; set; }
+    }
     private class DeviceData
     {
         public string name { get; set; }
