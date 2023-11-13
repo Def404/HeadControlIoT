@@ -56,7 +56,7 @@ public class HeadsController : ControllerBase
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var devices = JsonSerializer.Deserialize<List<DeviceStatus>>(content);
+            List<DeviceStatus> devices = JsonSerializer.Deserialize<List<DeviceStatus>>(content);
 
             var logStr = $"{DateTime.UtcNow} | \n";
             foreach (var device in devices)
